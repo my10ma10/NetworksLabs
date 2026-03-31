@@ -6,49 +6,14 @@ Server::Server(const std::string &ip_addr, uint16_t port) :
 }
 
 Server::~Server() {
-    if (_conn_fd != -1 || _socket_fd != -1) {
-        close();
-    }
+    Server::close();
 }
 
 void Server::close() {
-    ::close(_conn_fd);
-    ::close(_socket_fd);
-
-    _connfd_nicknames_map.erase(_conn_fd);
-    
-    _conn_fd = -1;
-    _socket_fd = -1;
-}
-
-void Server::recvHello() {
-    auto nickname_msg = Server::recv();
-    
-    if (!nickname_msg.has_value()) {
-        throw std::runtime_error("Nullopt hello msg");
+    if (isActive()) {
+        ::close(_socket_fd);
+        _socket_fd = -1;
     }
-    _connfd_nicknames_map[_conn_fd] = nickname_msg->payload;
-    std::cout << "Hello " << nickname_msg->payload << std::endl;
-}
-
-void Server::sendWelcome() {
-    std::string ip_str = inet_ntoa(_client_info.sin_addr);
-    std::string port_str = std::to_string(_port);
-    std::string welcome_str = "Welcome " + ip_str + ":" + port_str;
-
-    Message msg;
-    msg.length = welcome_str.size();
-    msg.type = MSG_WELCOME;
-
-    std::memset(msg.payload, 0, MAX_PAYLOAD);
-    std::memcpy(msg.payload, welcome_str.data(), welcome_str.size());
-    
-    Server::send(msg);
-}
-
-void Server::sendPong() {
-    Message msg {5, MSG_PONG, "PONG"};
-    Server::send(msg);
 }
 
 void Server::bind() {
@@ -80,33 +45,24 @@ void Server::listen(int attempts) {
     }
 }
 
-void Server::accept() {
-    socklen_t cli_len = sizeof(_client_info);
+ClientSession Server::accept() {
+    struct sockaddr_in client_info;
+    socklen_t info_len = sizeof(client_info);
     
-    _conn_fd = ::accept(_socket_fd, (struct sockaddr*)(&_client_info), &cli_len);
-    if (_conn_fd == -1) {
+    int conn_fd = ::accept(_socket_fd, (struct sockaddr*)(&client_info), &info_len);
+    if (conn_fd == -1) {
         throw std::runtime_error("Server accept failed");
     }
 
     std::cout << "Client connected\n";
+    return ClientSession(conn_fd, client_info);
 }
 
-void Server::send(const Message &msg) {
-    _messenger.sendMsg(msg, _conn_fd);
-}
 
-std::optional<Message> Server::recv() {
-    return _messenger.recvMsg(_conn_fd);
-}
-
-std::string Server::getIpPort() const {
+std::string Server::getFormattedIpPort() const {
     std::string res;
     res.resize(20);
     std::sprintf(res.data(), "[%s:%d]: ", _ip_addr.data(), _port);
 
     return res.data();
-}
-
-std::string Server::getName() {
-    return _connfd_nicknames_map.at(_conn_fd);
 }

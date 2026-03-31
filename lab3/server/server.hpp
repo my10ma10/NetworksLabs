@@ -1,30 +1,17 @@
 #pragma once
 
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-
 #include <unistd.h>
 #include <cstring>
-
 #include <iostream>
 
-#include "../defines.hpp"
-#include "../messaging.hpp"
-
-#include <unordered_map>
+#include "client_session.hpp"
 
 class Server {
-    struct sockaddr_in _server_info, _client_info;
+    struct sockaddr_in _server_info;
     int _socket_fd = -1;
-    int _conn_fd = -1;
 
     std::string _ip_addr;
     uint16_t _port;
-
-    Messenger _messenger;
-
-    std::unordered_map<int, std::string> _connfd_nicknames_map;
 
 public:
     Server() = default;
@@ -33,11 +20,6 @@ public:
     ~Server();
 
     void close();
-
-    void recvHello();
-    void sendWelcome();
-
-    void sendPong();
 
     Server(const Server& other) = default;
     Server& operator=(const Server& other) = default;
@@ -48,11 +30,11 @@ public:
     void bind();
     void listen(int attempts);
 
-    void accept();
+    ClientSession accept();
     
-    void send(const Message& msg);
-    std::optional<Message> recv();
 
-    std::string getIpPort() const;
-    std::string getName();
+    std::string getFormattedIpPort() const;
+    bool isActive() const { return _socket_fd != -1; }
+
+    uint16_t getPort() const { return _port; }
 };

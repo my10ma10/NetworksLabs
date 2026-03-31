@@ -1,3 +1,11 @@
+add_library(client_session_lib STATIC
+    client_session.hpp
+    client_session.cpp
+)
+target_link_libraries(client_session_lib PUBLIC
+    messenger_lib
+)
+
 add_library(thread_pool_lib STATIC
     thread_pool/thread_pool.hpp
     thread_pool/thread_pool.cpp
@@ -17,4 +25,5 @@ add_executable(server
 )
 target_link_libraries(server PUBLIC
     server_lib
+    client_session_lib
 )

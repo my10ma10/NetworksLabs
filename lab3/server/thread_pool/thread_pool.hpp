@@ -1,9 +1,9 @@
 #pragma once
 #include <thread>
-#include <condition_variable>
 #include <functional>
 #include <vector>
 #include <atomic>
+#include <memory>
 
 #include "thread_safe_queue.hpp"
 
@@ -27,5 +27,6 @@ public:
 
 template <typename Func>
 void ThreadPool::enqueueConnection(Func&& func) {
-    tasks_.enqueue(std::function<void()>(std::forward<Func>(func)));
+    auto shared_func = std::make_shared<std::decay_t<Func>>(std::forward<Func>(func));
+    tasks_.enqueue([shared_func]() { (*shared_func)(); });
 }

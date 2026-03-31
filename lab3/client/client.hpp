@@ -23,11 +23,11 @@ public:
     Client() = default;
     Client(const std::string& ip_addr, uint16_t port);
 
-    Client(const Client& other) = default;
-    Client& operator=(const Client& other) = default;
+    Client(const Client& other) = delete;
+    Client& operator=(const Client& other) = delete;
     
-    Client(Client&& other) = delete;
-    Client& operator=(Client&& other) = delete;
+    Client(Client&& other) = default;
+    Client& operator=(Client&& other) = default;
 
     void connect();
 
