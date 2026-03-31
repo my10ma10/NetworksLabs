@@ -62,7 +62,7 @@ ClientSession Server::accept() {
 std::string Server::getFormattedIpPort() const {
     std::string res;
     res.resize(20);
-    std::sprintf(res.data(), "[%s:%d]: ", _ip_addr.data(), _port);
+    std::sprintf(res.data(), "[%s:%d] ", _ip_addr.data(), _port);
 
-    return res.data();
+    return res;
 }

@@ -1,5 +1,6 @@
 #include "messaging.hpp"
 #include <cstring>
+#include <errno.h>
 
 void Messenger::sendMsg(const Message& msg, int fd){
     size_t total_sent = 0;
@@ -33,8 +34,10 @@ std::optional<Message> Messenger::recvMsg(int fd) {
         );
 
         if (recv_len == -1) {
-            std::perror("::recv error");
-            throw std::runtime_error("Recv error");
+            if (errno != ECONNRESET) {
+                std::perror("::recv error");
+                throw std::runtime_error("Recv error");
+            }
         }
         else if (recv_len == 0) {
             return std::nullopt;

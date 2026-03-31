@@ -18,7 +18,7 @@ void Client::connect() {
     _server_info.sin_port = htons(_port); 
 
     if (::connect(_socket_fd, (struct sockaddr *)&_server_info, sizeof(_server_info)) == -1) {
-        throw std::runtime_error("Connection with the server failed...\n");
+        throw std::runtime_error("Connection with the server failed");
     }
 
     std::cout << "Connected\n";
@@ -44,11 +44,15 @@ void Client::close() {
     ::close(_socket_fd);
 
     _socket_fd = -1;
-    
-    std::cout << "Disconnected\n";
 }
 
-void Client::send(const Message &msg) {
+void Client::shutdown() {
+    ::shutdown(_socket_fd, SHUT_WR);
+
+    _socket_fd = -1;
+}
+
+void Client::send(const Message& msg) {
     _messenger.sendMsg(msg, _socket_fd);
 }
 
@@ -64,4 +68,16 @@ void Client::recvWelcome() {
     }
 
     std::cout << welcome_msg->payload << std::endl;
+}
+
+std::string Client::getFormattedIpPort() const {
+    std::string res;
+    res.resize(20);
+    std::sprintf(res.data(), "[%s:%d] ", _ip_addr.data(), _port);
+
+    return res;
+}
+
+void Client::reset() {
+    Client::close();
 }

@@ -3,10 +3,10 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
 #include <unistd.h>
 
 #include <iostream>
+#include <mutex>
 
 #include "../messaging.hpp"
 
@@ -18,6 +18,8 @@ class Client {
     uint16_t _port;
 
     Messenger _messenger;
+    
+    std::mutex _mtx;
 
 public:
     Client() = default;
@@ -32,12 +34,16 @@ public:
     void connect();
 
     void sendHello();
-    void processMessaging();
 
     void close();
+    void shutdown();
+    void reset();
 
     void send(const Message& msg);
     std::optional<Message> recv();
 
     void recvWelcome();
+    
+    std::string getFormattedIpPort() const;
+
 };

@@ -42,7 +42,7 @@ void ClientSession::recvHello() {
     if (!nickname_msg.has_value()) {
         throw std::runtime_error("Nullopt hello msg");
     }
-    _connfd_nicknames_map[_conn_fd] = nickname_msg->payload;
+    _fd_nicknames_map[_conn_fd] = nickname_msg->payload;
     std::cout << "Hello " << nickname_msg->payload << std::endl;
 
 }
@@ -67,7 +67,8 @@ void ClientSession::sendPong() {
     ClientSession::send(msg);
 }
 
-void ClientSession::send(const Message &msg) {
+void ClientSession::send(const Message& msg) {
+    std::scoped_lock lock(_mtx);
     _messenger.sendMsg(msg, _conn_fd);
 }
 
@@ -77,7 +78,7 @@ std::optional<Message> ClientSession::recv() {
 
 void ClientSession::close() {
     if (isActive()) {
-        _connfd_nicknames_map.erase(_conn_fd);
+        _fd_nicknames_map.erase(_conn_fd);
         ::close(_conn_fd);
         _conn_fd = -1;
     }

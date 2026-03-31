@@ -7,6 +7,7 @@
 #include <string>
 #include <optional>
 #include <unordered_map>
+#include <mutex>
 
 #include "../defines.hpp"
 #include "../messaging.hpp"
@@ -17,7 +18,9 @@ class ClientSession {
 
     Messenger _messenger;
 
-    std::unordered_map<int, std::string> _connfd_nicknames_map;
+    std::unordered_map<int, std::string> _fd_nicknames_map;
+    
+    std::mutex _mtx;
 
 public:
     explicit ClientSession(int conn_fd, struct sockaddr_in client_info);
@@ -38,5 +41,7 @@ public:
 
     void close();
     bool isActive() const {return _conn_fd != -1; }
-    std::string getName() const { return _connfd_nicknames_map.at(_conn_fd); }
+
+    std::string getClientName() const { return _fd_nicknames_map.at(_conn_fd); }
+    int fd() const { return _conn_fd; }
 };
