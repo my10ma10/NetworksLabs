@@ -9,6 +9,8 @@
 #include <iostream>
 #include <optional>
 
+#include "logger/logger.hpp"
+
 class Messenger {
 public:
     Messenger() = default;
@@ -18,5 +20,7 @@ public:
 };
 
 Message stringToMsg(const std::string& str, MessageType type);
+std::string msgToString(const Message& msg);
+
 std::string convertToNick_Msg(const std::string& input);
 std::pair<std::string, std::string> convertFromNick_Msg(const std::string& input);

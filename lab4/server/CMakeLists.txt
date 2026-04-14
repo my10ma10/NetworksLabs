@@ -4,6 +4,7 @@ add_library(client_session_lib STATIC
 )
 target_link_libraries(client_session_lib PUBLIC
     messenger_lib
+    logger_lib
 )
 
 add_library(session_registry_lib STATIC
@@ -12,6 +13,7 @@ add_library(session_registry_lib STATIC
 )
 target_link_libraries(session_registry_lib PUBLIC
     client_session_lib
+    logger_lib
 )
 
 add_library(thread_pool_lib STATIC
@@ -26,6 +28,7 @@ add_library(server_lib STATIC
 target_link_libraries(server_lib PUBLIC
     messenger_lib
     thread_pool_lib
+    logger_lib
 )
 
 add_executable(server
@@ -35,4 +38,5 @@ target_link_libraries(server PUBLIC
     server_lib
     client_session_lib
     session_registry_lib
+    logger_lib
 )

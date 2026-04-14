@@ -10,7 +10,7 @@
 #include <mutex>
 
 #include "../defines.hpp"
-#include "../messaging.hpp"
+#include "messaging/messaging.hpp"
 
 class ClientSession {
     int _conn_fd = -1;

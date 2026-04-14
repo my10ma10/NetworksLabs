@@ -1,4 +1,5 @@
 #include "messaging.hpp"
+
 #include <cstring>
 #include <sstream>
 #include <errno.h>
@@ -18,7 +19,7 @@ void Messenger::sendMsg(const Message& msg, int fd){
         }
         total_sent += sent;
     }
-
+    Logger::log(4, "Transport", "send()");
 }
 
 std::optional<Message> Messenger::recvMsg(int fd) {
@@ -47,6 +48,7 @@ std::optional<Message> Messenger::recvMsg(int fd) {
     }
     msg.payload[msg.length] = '\0';
     
+    Logger::log(4, "Transport", "recv()");
     return msg;
 }
 
@@ -58,7 +60,13 @@ Message stringToMsg(const std::string& str, MessageType type) {
     msg.type = type;
     std::memcpy(msg.payload, str.data(), str.size());
 
+    Logger::log(6, "Presentation", "serialize Message");
     return msg;
+}
+
+std::string msgToString(const Message& msg) {
+    Logger::log(6, "Presentation", "deserialize Message");
+    return msg.payload;
 }
 
 std::string convertToNick_Msg(const std::string& input) {

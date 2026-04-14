@@ -1,6 +1,7 @@
 #include "client_session.hpp"
 
-#include "../messaging.hpp"
+#include "messaging/messaging.hpp"
+#include "logger/logger.hpp"
 
 #include <cstring>
 #include <algorithm>
@@ -41,14 +42,14 @@ ClientSession& ClientSession::operator=(ClientSession&& other) {
 
 void ClientSession::recvHello() {
     auto nickname_msg = ClientSession::recv();
-    nickname = nickname_msg.value().payload;
+    nickname = msgToString(nickname_msg.value());
 
     std::cout << "User [" << nickname << "] connected" << std::endl;
     
     if (!nickname_msg.has_value()) {
         throw std::runtime_error("Nullopt hello msg");
     }
-    std::cout << "Hello " << nickname_msg->payload << std::endl;
+    std::cout << "Hello " << nickname << std::endl;
 
 }
 
@@ -80,7 +81,6 @@ std::optional<Message> ClientSession::recv() {
 
 void ClientSession::close() {
     if (isActive()) {
-
         ::close(_conn_fd);
         _conn_fd = -1;
     }
@@ -102,7 +102,7 @@ void ClientSession::auth() {
         throw std::runtime_error("Empty nickname");
     }
 
-    std::cout << "[Layer 5] authentication success" << std::endl;
+    Logger::log(5, "Session",  "client authenticated");
     ClientSession::send({5, MSG_AUTH, "AUTH"});
 
 }

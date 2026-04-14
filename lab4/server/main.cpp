@@ -13,7 +13,7 @@ int main() {
     
     while (true) {
         ClientSession session = server.accept();
-        
+
 
         pool.enqueueConnection([session = std::move(session), &server, &registry]() mutable {
             registry.add(session);
@@ -28,21 +28,25 @@ int main() {
                 while (session.isActive()) {
                     auto msg = session.recv();
                     if (!msg.has_value()) {
-                        std::cerr << "Client disconnected: " << \
-                                session.getClientName() << " " << server.getFormattedIpPort() << std::endl;
+                        std::cerr << "User [" << session.getClientName() \
+                                    <<  "] disconnected" << std::endl;
                         break;
                     }
 
                     switch (msg->type) {
                         case MSG_TEXT: {
+                            Logger::log(7, "Application", "handle MSG_TEXT");
+
                             std::cout << session.getClientName() << " " \
-                                << server.getFormattedIpPort() << msg->payload << std::endl;
+                                << server.getFormattedIpPort() << msgToString(msg.value()) << std::endl;
                             
                             registry.broadcast(msg.value(), session.fd(), session.getClientName());                            
                             break;
                         }
                         case MSG_PRIVATE: {
-                            std::string recv_str(msg->payload);
+                            Logger::log(7, "Application", "handle MSG_PRIVATE");
+
+                            std::string recv_str = msgToString(msg.value());
 
                             size_t pos = recv_str.find(":");
                             if (pos == std::string::npos) {
@@ -58,15 +62,24 @@ int main() {
                             break;
                         }
                         case MSG_PING: {
+                            Logger::log(7, "Application", "handle MSG_PING");
+
                             session.sendPong();
                             break;
                         }
                         case MSG_BYE: {
+                            Logger::log(7, "Application", "handle MSG_BYE");
+
                             session.close();
                             registry.remove(session.fd());
                             return;
                         }
-                        
+                        case MSG_ERROR: {
+                            Logger::log(7, "Application", "handle MSG_ERROR");
+
+                            std::cerr << "Error: " << msgToString(msg.value()) << std::endl;
+                            break;
+                        }
                         default: {
                             std::cerr << "Unexpected msg type: " << static_cast<int>(msg->type) << std::endl;
                             return;

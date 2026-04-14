@@ -41,21 +41,21 @@ int main() {
             switch (msg->type) {
                 case MSG_TEXT:
                     std::cout << "\r" << client.getFormattedIpPort() << \
-                            msg->payload << "\n> " << std::flush;
+                            msgToString(msg.value()) << "\n> " << std::flush;
                     break;
                 case MSG_PRIVATE:
-                    std::cout << "\r" << "[PRIVATE]: " << \
-                            msg->payload << "\n> " << std::flush;
+                    std::cout << "\r" << "[PRIVATE]" << \
+                            msgToString(msg.value()) << "\n> " << std::flush;
                     break;
                 case MSG_PONG:
                     std::cout << "\rPONG\n> " << std::flush;
                     break;
                 case MSG_WELCOME:
                     std::cout << "\r" << client.getFormattedIpPort() << \
-                            msg->payload << "\n> " << std::flush;
+                            msgToString(msg.value()) << "\n> " << std::flush;
                     break;
                 case MSG_ERROR:
-                    std::cerr << "Error msg: " << msg->payload << std::endl;
+                    std::cerr << "Error msg: " << msgToString(msg.value()) << std::endl;
                     break;
                 default:
                     std::cerr << "\rUnexpected msg type: " 

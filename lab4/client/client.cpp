@@ -35,7 +35,7 @@ void Client::recvWelcome() {
         throw std::runtime_error("Nullopt welcome msg");
     }
 
-    std::cout << welcome_msg->payload << std::endl;
+    std::cout << msgToString(welcome_msg.value()) << std::endl;
 }
 
 void Client::auth(Message msg) {
@@ -52,37 +52,27 @@ void Client::auth(Message msg) {
         throw std::runtime_error("Unexpected msg type: " + std::to_string(auth_msg->type));
     }
     if (auth_msg->type == MSG_ERROR) {
-        throw std::runtime_error("Auth error: " + std::string(auth_msg->payload));
+        throw std::runtime_error("Auth error: " +  msgToString(auth_msg.value()));
     }
 
-    std::cout << "[Layer 5] authentication success" << std::endl;
+    Logger::log(5, "Session", "authentication success");
 }
 
 Message Client::enterNickname() {
-    Message nickname;
-
     std::cout << "Enter nickname: " << std::endl;
-    std::string hello_str;
-    std::getline(std::cin, hello_str);
+    std::string nickname_str;
+    std::getline(std::cin, nickname_str);
 
-    nickname.type = MSG_HELLO;
-    nickname.length = hello_str.size();
-
-    std::memset(nickname.payload, 0, MAX_PAYLOAD);
-    std::memcpy(nickname.payload, hello_str.data(), hello_str.size());
-
-    return nickname;
+    return stringToMsg(nickname_str, MSG_HELLO);
 }
 
 void Client::close() {
     ::close(_socket_fd);
-
     _socket_fd = -1;
 }
 
 void Client::shutdown() {
     ::shutdown(_socket_fd, SHUT_WR);
-
     _socket_fd = -1;
 }
 

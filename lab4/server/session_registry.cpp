@@ -24,6 +24,7 @@ void SessionRegistry::remove(int fd) {
 void SessionRegistry::broadcast(const Message& msg, int sender_fd, const std::string& sender_name) {
     std::scoped_lock lock(_mtx);
     
+    Logger::log(7, "Application",  "broadcast message");
     Message broadcast_msg = formatBroadcastMsg(msg, sender_name);
 
     for (auto& [fd, session] : _sessions) {
@@ -38,8 +39,7 @@ void SessionRegistry::broadcast(const Message& msg, int sender_fd, const std::st
 }
 
 void SessionRegistry::sendPrivate(const Message& msg,
-                                  const std::string& target_nickname,
-                                  const std::string& sender_name) {
+        const std::string& target_nickname, const std::string& sender_name) {
     std::scoped_lock lock(_mtx);
 
     auto it_fd = _nickname_to_fd.find(target_nickname);
@@ -59,14 +59,9 @@ void SessionRegistry::sendPrivate(const Message& msg,
         return;
     }
 
-    Message private_msg = msg;
-    std::string prefixed = "[" + sender_name + "]: " + msg.payload;
+    std::string prefixed = "[" + sender_name + "]: " + msgToString(msg);
 
-    std::memset(private_msg.payload, 0, MAX_PAYLOAD);
-    std::memcpy(private_msg.payload, prefixed.data(),
-                std::min(prefixed.size(), (size_t)MAX_PAYLOAD - 1));
-
-    private_msg.length = prefixed.size();
+    Message private_msg = stringToMsg(prefixed, static_cast<MessageType>(msg.type));
 
     it_session->second->send(private_msg);
 }
@@ -77,14 +72,6 @@ void SessionRegistry::registerNickname(int fd, const std::string& nickname) {
 }
 
 Message SessionRegistry::formatBroadcastMsg(const Message& msg, const std::string& sender_name) {
-    Message broadcast_msg = msg;
-    std::string prefixed = sender_name + ": " + msg.payload;
-
-    std::memset(broadcast_msg.payload, 0, MAX_PAYLOAD);
-    std::memcpy(broadcast_msg.payload, prefixed.data(), 
-                std::min(prefixed.size(), (size_t)MAX_PAYLOAD - 1));
-
-    broadcast_msg.length = prefixed.size();
-    
-    return broadcast_msg;
+    std::string prefixed = sender_name + ": " + msgToString(msg);
+    return stringToMsg(prefixed, static_cast<MessageType>(msg.type));
 }

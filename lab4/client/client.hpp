@@ -8,7 +8,7 @@
 #include <iostream>
 #include <mutex>
 
-#include "../messaging.hpp"
+#include "messaging/messaging.hpp"
 
 class Client {
     struct sockaddr_in _server_info;
