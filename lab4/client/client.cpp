@@ -24,20 +24,54 @@ void Client::connect() {
     std::cout << "Connected\n";
 }
 
-void Client::sendHello() {
-    Message msg;
+void Client::sendHello(const Message& msg) {
+    Client::send(msg);
+}
+
+void Client::recvWelcome() {
+    auto welcome_msg = Client::recv();
+
+    if (!welcome_msg.has_value()) {
+        throw std::runtime_error("Nullopt welcome msg");
+    }
+
+    std::cout << welcome_msg->payload << std::endl;
+}
+
+void Client::auth(Message msg) {
+    msg.type = MSG_AUTH;
+
+    Client::send(msg);
+
+    auto auth_msg = Client::recv();
+
+    if (!auth_msg.has_value()) {
+        throw std::runtime_error("Nullopt auth msg");
+    }
+    if (auth_msg->type != MSG_AUTH) {
+        throw std::runtime_error("Unexpected msg type: " + std::to_string(auth_msg->type));
+    }
+    if (auth_msg->type == MSG_ERROR) {
+        throw std::runtime_error("Auth error: " + std::string(auth_msg->payload));
+    }
+
+    std::cout << "[Layer 5] authentication success" << std::endl;
+}
+
+Message Client::enterNickname() {
+    Message nickname;
 
     std::cout << "Enter nickname: " << std::endl;
     std::string hello_str;
     std::getline(std::cin, hello_str);
 
-    msg.type = MSG_HELLO;
-    msg.length = hello_str.size();
-    
-    std::memset(msg.payload, 0, MAX_PAYLOAD);
-    std::memcpy(msg.payload, hello_str.data(), hello_str.size());
+    nickname.type = MSG_HELLO;
+    nickname.length = hello_str.size();
 
-    Client::send(msg);
+    std::memset(nickname.payload, 0, MAX_PAYLOAD);
+    std::memcpy(nickname.payload, hello_str.data(), hello_str.size());
+
+    return nickname;
 }
 
 void Client::close() {
@@ -58,16 +92,6 @@ void Client::send(const Message& msg) {
 
 std::optional<Message> Client::recv() {
     return _messenger.recvMsg(_socket_fd);
-}
-
-void Client::recvWelcome() {
-    auto welcome_msg = Client::recv();
-
-    if (!welcome_msg.has_value()) {
-        throw std::runtime_error("Nullopt welcome msg");
-    }
-
-    std::cout << welcome_msg->payload << std::endl;
 }
 
 std::string Client::getFormattedIpPort() const {

@@ -54,7 +54,6 @@ ClientSession Server::accept() {
         throw std::runtime_error("Server accept failed");
     }
 
-    std::cout << "Client connected\n";
     return ClientSession(conn_fd, client_info);
 }
 

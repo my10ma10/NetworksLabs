@@ -13,7 +13,7 @@ int main() {
     
     while (true) {
         ClientSession session = server.accept();
-
+        
 
         pool.enqueueConnection([session = std::move(session), &server, &registry]() mutable {
             registry.add(session);
@@ -21,6 +21,9 @@ int main() {
             try {
                 session.recvHello();
                 session.sendWelcome(server.getPort());
+
+                session.auth();
+                registry.registerNickname(session.fd(), session.getClientName());
 
                 while (session.isActive()) {
                     auto msg = session.recv();
@@ -36,6 +39,22 @@ int main() {
                                 << server.getFormattedIpPort() << msg->payload << std::endl;
                             
                             registry.broadcast(msg.value(), session.fd(), session.getClientName());                            
+                            break;
+                        }
+                        case MSG_PRIVATE: {
+                            std::string recv_str(msg->payload);
+
+                            size_t pos = recv_str.find(":");
+                            if (pos == std::string::npos) {
+                                throw std::runtime_error("Invalid format");
+                            }
+
+                            std::string nickname = recv_str.substr(0, pos);
+                            std::string message_str = recv_str.substr(pos + 1);
+
+                            Message private_msg = stringToMsg(message_str, MSG_PRIVATE);
+
+                            registry.sendPrivate(private_msg, nickname, session.getClientName());
                             break;
                         }
                         case MSG_PING: {

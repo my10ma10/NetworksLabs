@@ -1,5 +1,6 @@
 #include "messaging.hpp"
 #include <cstring>
+#include <sstream>
 #include <errno.h>
 
 void Messenger::sendMsg(const Message& msg, int fd){
@@ -47,4 +48,42 @@ std::optional<Message> Messenger::recvMsg(int fd) {
     msg.payload[msg.length] = '\0';
     
     return msg;
+}
+
+Message stringToMsg(const std::string& str, MessageType type) {
+    Message msg;
+    std::memset(msg.payload, 0, MAX_PAYLOAD);
+
+    msg.length = str.size();
+    msg.type = type;
+    std::memcpy(msg.payload, str.data(), str.size());
+
+    return msg;
+}
+
+std::string convertToNick_Msg(const std::string& input) {
+    std::istringstream iss(input);
+    std::string command_str, nickname;
+    
+    if (!(iss >> command_str >> nickname)) {
+        return "";
+    }
+
+    std::string msg;
+    std::getline(iss, msg);
+    
+    if (!msg.empty() && msg.front() == ' ') {
+        msg.erase(0, 1);
+    }
+
+    return nickname + ":" + msg;
+}
+
+std::pair<std::string, std::string> convertFromNick_Msg(const std::string& input) {
+    std::size_t semicolonPos = input.find(":");
+
+    std::string nickname = input.substr(0, semicolonPos);
+    std::string message_str = input.substr(semicolonPos + 1); 
+
+    return {nickname, message_str};
 }

@@ -43,12 +43,19 @@ int main() {
                     std::cout << "\r" << client.getFormattedIpPort() << \
                             msg->payload << "\n> " << std::flush;
                     break;
+                case MSG_PRIVATE:
+                    std::cout << "\r" << "[PRIVATE]: " << \
+                            msg->payload << "\n> " << std::flush;
+                    break;
                 case MSG_PONG:
                     std::cout << "\rPONG\n> " << std::flush;
                     break;
                 case MSG_WELCOME:
                     std::cout << "\r" << client.getFormattedIpPort() << \
                             msg->payload << "\n> " << std::flush;
+                    break;
+                case MSG_ERROR:
+                    std::cerr << "Error msg: " << msg->payload << std::endl;
                     break;
                 default:
                     std::cerr << "\rUnexpected msg type: " 
@@ -75,6 +82,13 @@ int main() {
                     client.shutdown();
                     break;
                 }
+                else if (input_str.substr(0, 3) == "/w " && input_str.size() > 3) {
+                    
+                    Message private_msg = stringToMsg(
+                        convertToNick_Msg(input_str), MSG_PRIVATE);
+
+                    client.send(private_msg);
+                }
                 else {
                     std::cerr << "Unexpected command\n";
                 }
@@ -83,14 +97,9 @@ int main() {
                 std::unique_lock lock(reconnect_mtx);
                 reconnect_cv.wait(lock, [] { return !is_reconnecting.load(); });
 
-                Message msg;
-                std::memset(msg.payload, 0, MAX_PAYLOAD);
-
-                msg.length = input_str.size();
-                msg.type = MSG_TEXT;
-                std::memcpy(msg.payload, input_str.data(), input_str.size());
+                Message text_msg = stringToMsg(input_str, MSG_TEXT);
                 
-                client.send(msg);
+                client.send(text_msg);
             }
         }
     }
@@ -113,8 +122,13 @@ void connectWithRetry(Client& client) {
     while (true) {
         try {
             client.connect();
-            client.sendHello();
+
+            auto nickname_msg = client.enterNickname();
+
+            client.sendHello(nickname_msg);
             client.recvWelcome();
+
+            client.auth(nickname_msg);
             return;
         }
         catch (const std::exception& ex) {

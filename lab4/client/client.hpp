@@ -33,7 +33,10 @@ public:
 
     void connect();
 
-    void sendHello();
+    void sendHello(const Message& msg);
+    void recvWelcome();
+    void auth(Message msg);
+    Message enterNickname();
 
     void close();
     void shutdown();
@@ -42,8 +45,6 @@ public:
     void send(const Message& msg);
     std::optional<Message> recv();
 
-    void recvWelcome();
-    
     std::string getFormattedIpPort() const;
 
 };
