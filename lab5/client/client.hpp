@@ -33,17 +33,17 @@ public:
 
     void connect();
 
-    void sendHello(const Message& msg);
+    void sendHello(const MessageEx& msg);
     void recvWelcome();
-    void auth(Message msg);
-    Message enterNickname();
+    void auth(MessageEx msg);
+    MessageEx enterNickname();
 
     void close();
     void shutdown();
     void reset();
 
-    void send(const Message& msg);
-    std::optional<Message> recv();
+    void send(const MessageEx& msg);
+    std::optional<MessageEx> recv();
 
     std::string getFormattedIpPort() const;
 

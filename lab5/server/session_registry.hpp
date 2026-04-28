@@ -16,11 +16,11 @@ public:
     void add(ClientSession& session);
     void remove(int fd);
 
-    void broadcast(const Message& msg, int sender_fd, const std::string& sender_name);
-    void sendPrivate(const Message& msg, const std::string& target_nickname,
+    void broadcast(const MessageEx& msg, int sender_fd, const std::string& sender_name);
+    void sendPrivate(const MessageEx& msg, const std::string& target_nickname,
                  const std::string& sender_name);
 
 void registerNickname(int fd, const std::string& nickname);
 private:
-    Message formatBroadcastMsg(const Message& msg, const std::string& sender_name);
+    MessageEx formatBroadcastMsg(const MessageEx& msg, const std::string& sender_name);
 };

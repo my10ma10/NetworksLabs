@@ -35,7 +35,7 @@ int main() {
 
                     switch (msg->type) {
                         case MSG_TEXT: {
-                            Logger::log(7, "Application", "handle MSG_TEXT");
+                            Logger::log("Application", "handle MSG_TEXT");
 
                             std::cout << session.getClientName() << " " \
                                 << server.getFormattedIpPort() << msgToString(msg.value()) << std::endl;
@@ -44,7 +44,7 @@ int main() {
                             break;
                         }
                         case MSG_PRIVATE: {
-                            Logger::log(7, "Application", "handle MSG_PRIVATE");
+                            Logger::log("Application", "handle MSG_PRIVATE");
 
                             std::string recv_str = msgToString(msg.value());
 
@@ -56,26 +56,26 @@ int main() {
                             std::string nickname = recv_str.substr(0, pos);
                             std::string message_str = recv_str.substr(pos + 1);
 
-                            Message private_msg = stringToMsg(message_str, MSG_PRIVATE);
+                            MessageEx private_msg = stringToMsg(message_str, MSG_PRIVATE);
 
                             registry.sendPrivate(private_msg, nickname, session.getClientName());
                             break;
                         }
                         case MSG_PING: {
-                            Logger::log(7, "Application", "handle MSG_PING");
+                            Logger::log("Application", "handle MSG_PING");
 
                             session.sendPong();
                             break;
                         }
                         case MSG_BYE: {
-                            Logger::log(7, "Application", "handle MSG_BYE");
+                            Logger::log("Application", "handle MSG_BYE");
 
                             session.close();
                             registry.remove(session.fd());
                             return;
                         }
                         case MSG_ERROR: {
-                            Logger::log(7, "Application", "handle MSG_ERROR");
+                            Logger::log("Application", "handle MSG_ERROR");
 
                             std::cerr << "Error: " << msgToString(msg.value()) << std::endl;
                             break;

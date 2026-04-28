@@ -74,7 +74,7 @@ int main() {
 
             if (input_str.front() == '/') {
                 if (input_str == "/ping") {
-                    Message msg = {5, MSG_PING, "PING"};
+                    auto msg = stringToMsg("PING", MSG_PING);
                     client.send(msg);
                 }
                 else if (input_str == "/quit") {
@@ -84,7 +84,7 @@ int main() {
                 }
                 else if (input_str.substr(0, 3) == "/w " && input_str.size() > 3) {
                     
-                    Message private_msg = stringToMsg(
+                    MessageEx private_msg = stringToMsg(
                         convertToNick_Msg(input_str), MSG_PRIVATE);
 
                     client.send(private_msg);
@@ -97,7 +97,7 @@ int main() {
                 std::unique_lock lock(reconnect_mtx);
                 reconnect_cv.wait(lock, [] { return !is_reconnecting.load(); });
 
-                Message text_msg = stringToMsg(input_str, MSG_TEXT);
+                MessageEx text_msg = stringToMsg(input_str, MSG_TEXT);
                 
                 client.send(text_msg);
             }

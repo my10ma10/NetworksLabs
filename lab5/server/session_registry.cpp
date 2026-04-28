@@ -21,11 +21,11 @@ void SessionRegistry::remove(int fd) {
     _sessions.erase(fd);
 }
 
-void SessionRegistry::broadcast(const Message& msg, int sender_fd, const std::string& sender_name) {
+void SessionRegistry::broadcast(const MessageEx& msg, int sender_fd, const std::string& sender_name) {
     std::scoped_lock lock(_mtx);
     
-    Logger::log(7, "Application",  "broadcast message");
-    Message broadcast_msg = formatBroadcastMsg(msg, sender_name);
+    Logger::log("Application",  "broadcast message");
+    MessageEx broadcast_msg = formatBroadcastMsg(msg, sender_name);
 
     for (auto& [fd, session] : _sessions) {
         if (fd == sender_fd) continue;
@@ -38,13 +38,13 @@ void SessionRegistry::broadcast(const Message& msg, int sender_fd, const std::st
     }
 }
 
-void SessionRegistry::sendPrivate(const Message& msg,
+void SessionRegistry::sendPrivate(const MessageEx& msg,
         const std::string& target_nickname, const std::string& sender_name) {
     std::scoped_lock lock(_mtx);
 
     auto it_fd = _nickname_to_fd.find(target_nickname);
     if (it_fd == _nickname_to_fd.end()) {
-        _sessions[it_fd->second]->send({19, MSG_ERROR, "Nickname not found"});
+        _sessions[it_fd->second]->send(stringToMsg("Nickname not found", MSG_ERROR));
 
         std::cerr << "Nickname not found" << std::endl;
         return;
@@ -54,14 +54,14 @@ void SessionRegistry::sendPrivate(const Message& msg,
 
     auto it_session = _sessions.find(target_fd);
     if (it_session == _sessions.end()) {
-        _sessions[it_fd->second]->send({18, MSG_ERROR, "Session not found"});
+        _sessions[it_fd->second]->send(stringToMsg("Session not found", MSG_ERROR));
         std::cerr << "Session not found" << std::endl;
         return;
     }
 
     std::string prefixed = "[" + sender_name + "]: " + msgToString(msg);
 
-    Message private_msg = stringToMsg(prefixed, static_cast<MessageType>(msg.type));
+    MessageEx private_msg = stringToMsg(prefixed, static_cast<MessageType>(msg.type));
 
     it_session->second->send(private_msg);
 }
@@ -71,7 +71,7 @@ void SessionRegistry::registerNickname(int fd, const std::string& nickname) {
     _nickname_to_fd[nickname] = fd;
 }
 
-Message SessionRegistry::formatBroadcastMsg(const Message& msg, const std::string& sender_name) {
+MessageEx SessionRegistry::formatBroadcastMsg(const MessageEx& msg, const std::string& sender_name) {
     std::string prefixed = sender_name + ": " + msgToString(msg);
     return stringToMsg(prefixed, static_cast<MessageType>(msg.type));
 }

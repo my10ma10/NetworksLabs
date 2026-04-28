@@ -37,8 +37,8 @@ public:
 
     void sendPong();
 
-    void send(const Message& msg, int fd = -1);
-    std::optional<Message> recv();
+    void send(const MessageEx& msg, int fd = -1);
+    std::optional<MessageEx> recv();
 
     void close();
     bool isActive() const {return _conn_fd != -1; }

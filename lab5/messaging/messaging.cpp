@@ -4,7 +4,7 @@
 #include <sstream>
 #include <errno.h>
 
-void Messenger::sendMsg(const Message& msg, int fd){
+void Messenger::sendMsg(const MessageEx& msg, int fd){
     size_t total_sent = 0;
     const char* buf = reinterpret_cast<const char*>(&msg);
 
@@ -19,19 +19,22 @@ void Messenger::sendMsg(const Message& msg, int fd){
         }
         total_sent += sent;
     }
-    Logger::log(4, "Transport", "send()");
+    Logger::log("Transport", "send() " + std::to_string(total_sent) + " bytes via TCP");
+    Logger::log("Internet", "dst=127.0.0.1 proto=TCP");
+    Logger::log("Network Access", "frame sent to network interface");
 }
 
-std::optional<Message> Messenger::recvMsg(int fd) {
-    Message msg;
+std::optional<MessageEx> Messenger::recvMsg(int fd) {
+    MessageEx msg;
     std::memset(&msg, 0, sizeof(msg));
 
     size_t total_received = 0;
     
     while (total_received < MAX_PAYLOAD) {
         int recv_len = ::recv(
-            fd, &msg + total_received, 
-            sizeof(Message) - total_received, 
+            fd, 
+            reinterpret_cast<char*>(&msg) + total_received, 
+            sizeof(MessageEx) - total_received, 
             0
         );
 
@@ -47,25 +50,33 @@ std::optional<Message> Messenger::recvMsg(int fd) {
         total_received += recv_len;
     }
     msg.payload[msg.length] = '\0';
+
+    Logger::log("Network Access", "frame received via network interface");
+    Logger::log("Internet", "src=127.0.0.1 dst=127.0.0.1 proto=TCP");
+    Logger::log("Transport", 
+        std::string("recv() ")  + std::to_string(total_received) + " bytes via TCP");
     
-    Logger::log(4, "Transport", "recv()");
     return msg;
 }
 
-Message stringToMsg(const std::string& str, MessageType type) {
-    Message msg;
+MessageEx stringToMsg(const std::string& str, MessageType type) {
+    MessageEx msg;
     std::memset(msg.payload, 0, MAX_PAYLOAD);
 
     msg.length = str.size();
     msg.type = type;
+    msg.msg_id = 0;
+    msg.timestamp = std::time(nullptr);
+    std::memset(msg.sender, 0, MAX_NAME);
+    std::memset(msg.receiver, 0, MAX_NAME);
     std::memcpy(msg.payload, str.data(), str.size());
 
-    Logger::log(6, "Presentation", "serialize Message");
+    Logger::log("Application", "serialize Message -> type=" + std::to_string(type));
     return msg;
 }
 
-std::string msgToString(const Message& msg) {
-    Logger::log(6, "Presentation", "deserialize Message");
+std::string msgToString(const MessageEx& msg) {
+    Logger::log("Application", "deserialize Message -> type=" + std::to_string(msg.type));
     return msg.payload;
 }
 

@@ -58,24 +58,24 @@ void ClientSession::sendWelcome(uint16_t port) {
     std::string port_str = std::to_string(port);
     std::string welcome_str = "Welcome " + ip_str + ":" + port_str;
 
-    Message msg = stringToMsg(welcome_str, MSG_WELCOME);
+    MessageEx msg = stringToMsg(welcome_str, MSG_WELCOME);
     
     ClientSession::send(msg);
 }
 
 void ClientSession::sendPong() {
-    Message msg {5, MSG_PONG, "PONG"};
+    MessageEx msg = stringToMsg("PONG", MSG_PONG);
     ClientSession::send(msg);
 }
 
-void ClientSession::send(const Message& msg, int fd) {
+void ClientSession::send(const MessageEx& msg, int fd) {
     std::scoped_lock lock(_mtx);
 
     if (fd == -1) fd = _conn_fd;
     _messenger.sendMsg(msg, fd);
 }
 
-std::optional<Message> ClientSession::recv() {
+std::optional<MessageEx> ClientSession::recv() {
     return _messenger.recvMsg(_conn_fd);
 }
 
@@ -96,13 +96,13 @@ void ClientSession::auth() {
     }
 
     if (std::string(auth_msg->payload).empty() || auth_msg->length == 0) {
-        ClientSession::send({15, MSG_ERROR, "Empty nickname"});
+        ClientSession::send(stringToMsg("Empty nickname", MSG_ERROR));
         ClientSession::close();
 
         throw std::runtime_error("Empty nickname");
     }
 
-    Logger::log(5, "Session",  "client authenticated");
-    ClientSession::send({5, MSG_AUTH, "AUTH"});
+    Logger::log("Application", "client authenticated");
+    ClientSession::send(stringToMsg("AUTH", MSG_AUTH));
 
 }

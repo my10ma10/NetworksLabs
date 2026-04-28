@@ -24,7 +24,7 @@ void Client::connect() {
     std::cout << "Connected\n";
 }
 
-void Client::sendHello(const Message& msg) {
+void Client::sendHello(const MessageEx& msg) {
     Client::send(msg);
 }
 
@@ -38,7 +38,7 @@ void Client::recvWelcome() {
     std::cout << msgToString(welcome_msg.value()) << std::endl;
 }
 
-void Client::auth(Message msg) {
+void Client::auth(MessageEx msg) {
     msg.type = MSG_AUTH;
 
     Client::send(msg);
@@ -55,10 +55,10 @@ void Client::auth(Message msg) {
         throw std::runtime_error("Auth error: " +  msgToString(auth_msg.value()));
     }
 
-    Logger::log(5, "Session", "authentication success");
+    Logger::log("Session", "authentication success");
 }
 
-Message Client::enterNickname() {
+MessageEx Client::enterNickname() {
     std::cout << "Enter nickname: " << std::endl;
     std::string nickname_str;
     std::getline(std::cin, nickname_str);
@@ -76,11 +76,11 @@ void Client::shutdown() {
     _socket_fd = -1;
 }
 
-void Client::send(const Message& msg) {
+void Client::send(const MessageEx& msg) {
     _messenger.sendMsg(msg, _socket_fd);
 }
 
-std::optional<Message> Client::recv() {
+std::optional<MessageEx> Client::recv() {
     return _messenger.recvMsg(_socket_fd);
 }
 
