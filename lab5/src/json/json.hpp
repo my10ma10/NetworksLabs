@@ -9,16 +9,16 @@ namespace nlohmann {
     template <>
     struct adl_serializer<MessageEx> {
         static void to_json(json& j, const MessageEx& msg) {
-        j = json {
-            {"length", msg.length},
-            {"type", msg.type},
-            {"msg_id", msg.msg_id},
-            {"sender", std::string(msg.sender)},
-            {"receiver", std::string(msg.receiver)},
-            {"timestamp", static_cast<int64_t>(msg.timestamp)},
-            {"payload", std::string(msg.payload)}
-        };
-    }
+            j = json {
+                {"length", msg.length},
+                {"type", msg.type},
+                {"msg_id", msg.msg_id},
+                {"sender", std::string(msg.sender)},
+                {"receiver", std::string(msg.receiver)},
+                {"timestamp", static_cast<int64_t>(msg.timestamp)},
+                {"payload", std::string(msg.payload)}
+            };
+        }
 
         static void from_json(const json& j, MessageEx& msg) {
             j.at("length").get_to(msg.length);

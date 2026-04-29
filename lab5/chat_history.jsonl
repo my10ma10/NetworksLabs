@@ -1,0 +1,4 @@
+{"delivered":true,"is_offline":false,"msg_id":3,"receiver":"","sender":"alex","text":"llll","timestamp":1777455803,"type":"MSG_TEXT"}
+{"delivered":true,"is_offline":false,"msg_id":4,"receiver":"","sender":"alex","text":"asdasd","timestamp":1777455805,"type":"MSG_TEXT"}
+{"delivered":true,"is_offline":false,"msg_id":7,"receiver":"alex","sender":"nick","text":"llele","timestamp":1777455882,"type":"MSG_PRIVATE"}
+{"delivered":true,"is_offline":false,"msg_id":3,"receiver":"","sender":"nick","text":"history 1","timestamp":1777455939,"type":"MSG_TEXT"}

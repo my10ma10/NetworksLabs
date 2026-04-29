@@ -1,10 +1,3 @@
-add_library(json_lib STATIC
-    json/json.cpp
-)
-target_link_libraries(json_lib PUBLIC
-    nlohmann_json
-)
-target_include_directories(json_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 add_library(logger_lib STATIC
     logger/logger.hpp
@@ -25,7 +18,7 @@ add_library(messenger_lib STATIC
 )
 target_link_libraries(messenger_lib PUBLIC
     logger_lib
-    json_lib
+    nlohmann_json
 )
 target_include_directories(messenger_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 

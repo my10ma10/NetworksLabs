@@ -10,7 +10,7 @@
 #include <optional>
 
 #include "logger/logger.hpp"
-#include "json/json.cpp"
+#include "json/json.hpp"
 
 using json = nlohmann::json;
 
@@ -29,5 +29,6 @@ std::pair<std::string, std::string> convertToNick_Msg(const std::string& input);
 
 void printTextMessage(const MessageEx& msg);
 void printPrivateMessage(const MessageEx& msg);
+void printOfflineMessage(const MessageEx& msg);
 
 std::string jsonToString(const json& j);

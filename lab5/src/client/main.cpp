@@ -43,7 +43,12 @@ int main() {
             switch (msg->type) {
                 case MSG_TEXT: 
                 {
-                    printTextMessage(msg.value());
+                    if (std::string(msg->payload).substr(0, 9) == "[OFFLINE]") {
+                        printOfflineMessage(msg.value());
+                    } 
+                    else {
+                        printPrivateMessage(msg.value());
+                    }
                     break;
                 }
                 case MSG_PRIVATE:
@@ -63,6 +68,13 @@ int main() {
                 case MSG_ERROR:
                     std::cerr << "Error msg: " << msgToString(msg.value()) << std::endl;
                     break;
+                case MSG_SERVER_INFO:
+                    std::cout << "\r[SERVER]: " << msgToString(msg.value()) << "\n> " << std::flush;
+                    break;
+
+                case MSG_HISTORY_DATA:
+                    std::cout << "\r" << "[HISTORY:]\n" << msgToString(msg.value()) << "\n> " << std::flush;
+                    break;
                 default:
                     std::cerr << "\rUnexpected msg type: " 
                             << static_cast<int>(msg->type) << "\n> " << std::flush;
@@ -79,7 +91,13 @@ int main() {
             std::getline(std::cin, input_str);
 
             if (input_str.front() == '/') {
-                if (input_str == "/ping") {
+                if (input_str == "/help") {
+                    std::cout << "Available commands:\n"
+                            << "/help\n/list\n/history\n/history N\n"
+                            << "/quit\n/w <nick> <message>\n/ping\n"
+                            << "Tip: packets never sleep\n";
+                }
+                else if (input_str == "/ping") {
                     auto msg = stringToMsg("PING", MSG_PING);
                     client.send(msg);
                 }
@@ -87,6 +105,27 @@ int main() {
                     is_running = false;
                     client.shutdown();
                     break;
+                }
+                else if (input_str == "/list") {
+                    MessageEx msg = stringToMsg("", MSG_LIST);
+                    client.send(msg);
+                }
+
+                else if (input_str == "/history") {
+                    MessageEx msg = stringToMsg("", MSG_HISTORY);
+                    client.send(msg);
+                }
+                else if (input_str.substr(0, 9) == "/history " && input_str.size() > 9) {
+                    std::string n_str = input_str.substr(9);
+                    try {
+                        int n = std::stoi(n_str);
+                        if (n <= 0) throw std::invalid_argument("n <= 0");
+                        MessageEx msg = stringToMsg(std::to_string(n), MSG_HISTORY);
+                        client.send(msg);
+                    }
+                    catch (const std::exception&) {
+                        std::cerr << "Invalid argument: /history N requires positive integer\n";
+                    }
                 }
                 else if (input_str.substr(0, 3) == "/w " && input_str.size() > 3) {
                     auto [nickname, message_str] = convertToNick_Msg(input_str);

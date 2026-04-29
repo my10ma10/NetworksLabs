@@ -25,6 +25,8 @@ int main() {
                 session.auth();
                 registry.registerNickname(session.fd(), session.getClientName());
 
+                registry.deliverOffline(session.getClientName(), &session);
+
                 while (session.isActive()) {
                     auto msg = session.recv();
                     if (!msg.has_value()) {
@@ -54,6 +56,7 @@ int main() {
                                         std::min(target_nickname.size(), (size_t)MAX_NAME - 1));
 
                             registry.sendPrivate(private_msg, target_nickname, session.getClientName());
+                            break;
                         }
                         case MSG_PING: {
                             Logger::log("Application", "handle MSG_PING");
@@ -67,6 +70,28 @@ int main() {
                             session.close();
                             registry.remove(session.fd());
                             return;
+                        }
+                        case MSG_LIST: {
+                            Logger::log("Application", "handle MSG_LIST");
+
+                            std::string user_list = "Online users\n" + registry.getUserList();
+                            MessageEx reply = stringToMsg(user_list, MSG_SERVER_INFO);
+                            session.send(reply);
+                            break;
+                        }
+                        case MSG_HISTORY: {
+                            Logger::log("Application", "handle MSG_HISTORY");
+
+                            int n = 0;
+                            std::string payload = msgToString(msg.value());
+                            if (!payload.empty()) {
+                                try { n = std::stoi(payload); } catch (...) { n = 0; }
+                            }
+
+                            std::string history = registry.getHistory(n); // читает из JSON-файла
+                            MessageEx reply = stringToMsg(history, MSG_HISTORY_DATA);
+                            session.send(reply);
+                            break;
                         }
                         case MSG_ERROR: {
                             Logger::log("Application", "handle MSG_ERROR");

@@ -112,9 +112,18 @@ void printPrivateMessage(const MessageEx& msg) {
    std::cout << "\r" << formatTimestamp(msg.timestamp) << \
         "[PRIVATE]" << \
         "[id=" << msg.msg_id << "]" << \
-        "[" << msg.sender << " -> " << msg.receiver << "]" << \
+        "[" << msg.sender << " -> " << msg.receiver << "]: " << \
         msgToString(msg) << \
         "\n> " << std::flush;
+}
+
+void printOfflineMessage(const MessageEx& msg) {
+    std::cout << "\r[" << formatTimestamp(msg.timestamp) << "]"
+            << "[id=" << msg.msg_id << "]"
+            << "[OFFLINE]"
+            << "[" << msg.sender << " . " << msg.receiver << "]: "
+            << std::string(msg.payload).substr(10)
+            << "\n> " << std::flush;
 }
 
 std::string jsonToString(const json& j) {
