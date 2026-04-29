@@ -18,6 +18,8 @@ class Client {
     uint16_t _port;
 
     Messenger _messenger;
+
+    std::string _nickname;
     
     std::mutex _mtx;
 
@@ -46,5 +48,6 @@ public:
     std::optional<MessageEx> recv();
 
     std::string getFormattedIpPort() const;
+    std::string getNickname() const;
 
 };

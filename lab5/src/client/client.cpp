@@ -63,6 +63,8 @@ MessageEx Client::enterNickname() {
     std::string nickname_str;
     std::getline(std::cin, nickname_str);
 
+    _nickname = nickname_str;
+
     return stringToMsg(nickname_str, MSG_HELLO);
 }
 
@@ -90,6 +92,10 @@ std::string Client::getFormattedIpPort() const {
     std::sprintf(res.data(), "[%s:%d] ", _ip_addr.data(), _port);
 
     return res;
+}
+
+std::string Client::getNickname() const {
+    return _nickname;
 }
 
 void Client::reset() {

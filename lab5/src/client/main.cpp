@@ -7,6 +7,8 @@
 #include "../defines.hpp"
 #include "client.hpp"
 
+#include "../time_formatting.cpp"
+
 std::atomic<bool> is_reconnecting{false};
 std::mutex reconnect_mtx;
 std::condition_variable reconnect_cv;
@@ -39,17 +41,21 @@ int main() {
             }
 
             switch (msg->type) {
-                case MSG_TEXT:
-                    std::cout << "\r" << client.getFormattedIpPort() << \
-                            msgToString(msg.value()) << "\n> " << std::flush;
+                case MSG_TEXT: 
+                {
+                    printTextMessage(msg.value());
                     break;
+                }
                 case MSG_PRIVATE:
-                    std::cout << "\r" << "[PRIVATE]" << \
-                            msgToString(msg.value()) << "\n> " << std::flush;
+                {
+                    printPrivateMessage(msg.value());
                     break;
+                }
                 case MSG_PONG:
+                {
                     std::cout << "\rPONG\n> " << std::flush;
                     break;
+                }
                 case MSG_WELCOME:
                     std::cout << "\r" << client.getFormattedIpPort() << \
                             msgToString(msg.value()) << "\n> " << std::flush;
@@ -83,9 +89,13 @@ int main() {
                     break;
                 }
                 else if (input_str.substr(0, 3) == "/w " && input_str.size() > 3) {
+                    auto [nickname, message_str] = convertToNick_Msg(input_str);
                     
-                    MessageEx private_msg = stringToMsg(
-                        convertToNick_Msg(input_str), MSG_PRIVATE);
+                    MessageEx private_msg = stringToMsg(message_str, MSG_PRIVATE);
+                    std::memcpy(private_msg.receiver, nickname.data(), 
+                                std::min(nickname.size(), (size_t)MAX_NAME - 1));
+                    std::memcpy(private_msg.sender, client.getNickname().data(), 
+                                std::min(client.getNickname().size(), (size_t)MAX_NAME - 1));
 
                     client.send(private_msg);
                 }
@@ -98,6 +108,9 @@ int main() {
                 reconnect_cv.wait(lock, [] { return !is_reconnecting.load(); });
 
                 MessageEx text_msg = stringToMsg(input_str, MSG_TEXT);
+                
+                std::memcpy(text_msg.sender, client.getNickname().data(), 
+                            std::min(client.getNickname().size(), (size_t)MAX_NAME - 1));
                 
                 client.send(text_msg);
             }

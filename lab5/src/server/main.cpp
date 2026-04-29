@@ -46,20 +46,14 @@ int main() {
                         case MSG_PRIVATE: {
                             Logger::log("Application", "handle MSG_PRIVATE");
 
-                            std::string recv_str = msgToString(msg.value());
-
-                            size_t pos = recv_str.find(":");
-                            if (pos == std::string::npos) {
-                                throw std::runtime_error("Invalid format");
-                            }
-
-                            std::string nickname = recv_str.substr(0, pos);
-                            std::string message_str = recv_str.substr(pos + 1);
+                            std::string target_nickname = msg->receiver;
+                            std::string message_str = msgToString(msg.value());
 
                             MessageEx private_msg = stringToMsg(message_str, MSG_PRIVATE);
+                            std::memcpy(private_msg.receiver, target_nickname.data(), 
+                                        std::min(target_nickname.size(), (size_t)MAX_NAME - 1));
 
-                            registry.sendPrivate(private_msg, nickname, session.getClientName());
-                            break;
+                            registry.sendPrivate(private_msg, target_nickname, session.getClientName());
                         }
                         case MSG_PING: {
                             Logger::log("Application", "handle MSG_PING");

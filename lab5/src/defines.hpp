@@ -8,6 +8,7 @@ inline constexpr size_t MAX_NAME = 32;
 inline constexpr int MAX_PAYLOAD = 256;
 inline constexpr size_t MAX_TIME_STR = 32;
 inline constexpr size_t THREAD_COUNT = 10;
+inline size_t Id_Count = 0;
 
 struct MessageEx {
     uint32_t length;                 // длина полезной части

@@ -5,6 +5,7 @@ add_library(client_lib STATIC
 )
 target_link_libraries(client_lib PUBLIC
     messenger_lib
+    time_lib
 )
 
 add_executable(client

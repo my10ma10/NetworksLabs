@@ -4,6 +4,6 @@ void Logger::log(
     const std::string& layer_name, 
     const std::string& message)
 {
-    std::clog << "[" << layer_name << \
-        "] " << message << std::endl;
+    std::clog << "\r" << "[" << layer_name << \
+        "] " << message << "\n> " << std::flush;
 }

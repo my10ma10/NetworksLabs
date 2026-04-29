@@ -10,6 +10,9 @@
 #include <optional>
 
 #include "logger/logger.hpp"
+#include "json/json.cpp"
+
+using json = nlohmann::json;
 
 class Messenger {
 public:
@@ -22,5 +25,9 @@ public:
 MessageEx stringToMsg(const std::string& str, MessageType type);
 std::string msgToString(const MessageEx& msg);
 
-std::string convertToNick_Msg(const std::string& input);
-std::pair<std::string, std::string> convertFromNick_Msg(const std::string& input);
+std::pair<std::string, std::string> convertToNick_Msg(const std::string& input);
+
+void printTextMessage(const MessageEx& msg);
+void printPrivateMessage(const MessageEx& msg);
+
+std::string jsonToString(const json& j);

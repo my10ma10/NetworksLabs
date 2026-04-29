@@ -25,7 +25,11 @@ void SessionRegistry::broadcast(const MessageEx& msg, int sender_fd, const std::
     std::scoped_lock lock(_mtx);
     
     Logger::log("Application",  "broadcast message");
-    MessageEx broadcast_msg = formatBroadcastMsg(msg, sender_name);
+        MessageEx broadcast_msg = msg;
+
+    std::memcpy(broadcast_msg.sender, sender_name.data(),
+                std::min(sender_name.size(), (size_t)MAX_NAME - 1));
+
 
     for (auto& [fd, session] : _sessions) {
         if (fd == sender_fd) continue;
@@ -44,34 +48,26 @@ void SessionRegistry::sendPrivate(const MessageEx& msg,
 
     auto it_fd = _nickname_to_fd.find(target_nickname);
     if (it_fd == _nickname_to_fd.end()) {
-        _sessions[it_fd->second]->send(stringToMsg("Nickname not found", MSG_ERROR));
-
-        std::cerr << "Nickname not found" << std::endl;
+        auto sender_fd_it = _nickname_to_fd.find(sender_name);
+        if (sender_fd_it != _nickname_to_fd.end()) {
+            _sessions[sender_fd_it->second]->send(
+                stringToMsg("Nickname not found", MSG_ERROR));
+        }
         return;
     }
 
     int target_fd = it_fd->second;
-
     auto it_session = _sessions.find(target_fd);
-    if (it_session == _sessions.end()) {
-        _sessions[it_fd->second]->send(stringToMsg("Session not found", MSG_ERROR));
-        std::cerr << "Session not found" << std::endl;
-        return;
-    }
+    if (it_session == _sessions.end()) return;
 
-    std::string prefixed = "[" + sender_name + "]: " + msgToString(msg);
+    MessageEx forward_msg = msg;
+    std::memcpy(forward_msg.sender, sender_name.data(),
+                std::min(sender_name.size(), (size_t)MAX_NAME - 1));
 
-    MessageEx private_msg = stringToMsg(prefixed, static_cast<MessageType>(msg.type));
-
-    it_session->second->send(private_msg);
+    it_session->second->send(forward_msg);
 }
 
 void SessionRegistry::registerNickname(int fd, const std::string& nickname) {
     std::scoped_lock lock(_mtx);
     _nickname_to_fd[nickname] = fd;
-}
-
-MessageEx SessionRegistry::formatBroadcastMsg(const MessageEx& msg, const std::string& sender_name) {
-    std::string prefixed = sender_name + ": " + msgToString(msg);
-    return stringToMsg(prefixed, static_cast<MessageType>(msg.type));
 }

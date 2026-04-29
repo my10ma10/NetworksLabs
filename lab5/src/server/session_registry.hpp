@@ -20,7 +20,6 @@ public:
     void sendPrivate(const MessageEx& msg, const std::string& target_nickname,
                  const std::string& sender_name);
 
-void registerNickname(int fd, const std::string& nickname);
-private:
-    MessageEx formatBroadcastMsg(const MessageEx& msg, const std::string& sender_name);
+    void registerNickname(int fd, const std::string& nickname);
+
 };
