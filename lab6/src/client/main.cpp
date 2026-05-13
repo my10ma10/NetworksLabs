@@ -12,6 +12,7 @@
 std::atomic<bool> is_reconnecting{false};
 std::mutex reconnect_mtx;
 std::condition_variable reconnect_cv;
+std::vector<PingStats> stats;
 
 void connectWithRetry(Client& client);
 
@@ -111,7 +112,6 @@ int main() {
                         }
                     }
 
-                    std::vector<PingStats> stats;
 
                     for (int i = 0; i < n; ++i) {
                         MessageEx ping = stringToMsg("PING", MSG_PING);
@@ -130,13 +130,19 @@ int main() {
                     while (std::chrono::steady_clock::now() < deadline) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(50));
                     }
+                }
+                else if (input_str == "/netdiag") {
+                    if (!stats.empty()) {
+                        client.printPingResults(stats);
+                    }
+                    else {
+                        std::cout << "First you need to make a diagnosis\n";
+                    }
 
-                    client.printPingResults(stats);
                 }
                 else if (input_str == "/quit") {
                     is_running = false;
                     client.shutdown();
-                    break;
                 }
                 else if (input_str == "/list") {
                     MessageEx msg = stringToMsg("", MSG_LIST);
