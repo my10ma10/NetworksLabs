@@ -13,6 +13,9 @@ ClientSession::ClientSession(int conn_fd, sockaddr_in client_info)
 
 ClientSession::~ClientSession() {
     ClientSession::close();
+    if (_ack_reader.joinable()) {
+        _ack_reader.join();
+    }
 }
 
 ClientSession::ClientSession(ClientSession&& other) {
@@ -41,7 +44,7 @@ ClientSession& ClientSession::operator=(ClientSession&& other) {
 }
 
 void ClientSession::recvHello() {
-    auto nickname_msg = ClientSession::recv();
+    auto nickname_msg = ClientSession::rawRecv();
     nickname = msgToString(nickname_msg.value());
 
     std::cout << "User [" << nickname << "] connected" << std::endl;
@@ -60,7 +63,7 @@ void ClientSession::sendWelcome(uint16_t port) {
 
     MessageEx msg = stringToMsg(welcome_str, MSG_WELCOME);
     
-    ClientSession::send(msg);
+    ClientSession::rawSend(msg);
 }
 
 void ClientSession::sendPong() {
@@ -76,7 +79,7 @@ void ClientSession::send(const MessageEx& msg, int fd) {
 }
 
 std::optional<MessageEx> ClientSession::recv() {
-    return _messenger.recvMsg(_conn_fd);
+    return _inbox.pop();
 }
 
 void ClientSession::close() {
@@ -84,10 +87,34 @@ void ClientSession::close() {
         ::close(_conn_fd);
         _conn_fd = -1;
     }
+    _inbox.stop();
+}
+
+void ClientSession::rawSend(const MessageEx& msg, int fd) {
+    std::scoped_lock lock(_mtx);
+
+    if (fd == -1) fd = _conn_fd;
+
+    json j = msg;
+    std::string j_str = j.dump() + "\n";
+
+    _messenger.rawSend(fd, j_str);
+}
+
+std::optional<MessageEx> ClientSession::rawRecv() {
+    std::string recv_str;
+    ssize_t received = _messenger.rawRecv(_conn_fd, recv_str);
+
+    if (received <= 0) return std::nullopt; 
+    if (recv_str.empty()) return std::nullopt;
+
+    MessageEx msg = json::parse(recv_str);
+
+    return msg;
 }
 
 void ClientSession::auth() {
-    auto auth_msg = ClientSession::recv();
+    auto auth_msg = ClientSession::rawRecv();
     if (!auth_msg.has_value()) {
         throw std::runtime_error("Nullopt auth msg");
     }
@@ -96,13 +123,42 @@ void ClientSession::auth() {
     }
 
     if (std::string(auth_msg->payload).empty() || auth_msg->length == 0) {
-        ClientSession::send(stringToMsg("Empty nickname", MSG_ERROR));
+        ClientSession::rawSend(stringToMsg("Empty nickname", MSG_ERROR));
         ClientSession::close();
 
         throw std::runtime_error("Empty nickname");
     }
 
+    ClientSession::rawSend(stringToMsg("AUTH", MSG_AUTH));
     Logger::log("Application", "client authenticated");
-    ClientSession::send(stringToMsg("AUTH", MSG_AUTH));
+}
 
+void ClientSession::startAckReader() {
+    _ack_reader = std::thread([this]() {
+        try {
+            while (isActive()) {
+                
+                auto msg = ClientSession::rawRecv();
+                if (!msg.has_value()) break;
+
+                if (msg->type == MSG_ACK) {
+                    _messenger.notifyACK(msg->msg_id);
+                } 
+                else {
+                    _inbox.enqueue(msg.value());
+                }
+            }
+        }
+        catch (const std::exception& ex) {
+            std::clog << ex.what() << std::endl;
+        }
+    });
+}
+
+void ClientSession::sendAckFor(uint32_t msg_id) {
+    MessageEx ack;
+    std::memset(&ack, 0, sizeof(ack));
+    ack.type   = MSG_ACK;
+    ack.msg_id = msg_id;
+    rawSend(ack);
 }

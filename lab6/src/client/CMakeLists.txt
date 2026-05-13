@@ -13,4 +13,5 @@ add_executable(client
 )
 target_link_libraries(client PUBLIC
     client_lib
+    thread_pool_lib
 )

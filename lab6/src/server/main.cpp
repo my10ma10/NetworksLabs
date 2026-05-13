@@ -25,6 +25,7 @@ int main() {
                 session.auth();
                 registry.registerNickname(session.fd(), session.getClientName());
 
+                session.startAckReader();
                 registry.deliverOffline(session.getClientName(), &session);
 
                 while (session.isActive()) {
@@ -42,7 +43,8 @@ int main() {
                             std::cout << session.getClientName() << " " \
                                 << server.getFormattedIpPort() << msgToString(msg.value()) << std::endl;
                             
-                            registry.broadcast(msg.value(), session.fd(), session.getClientName());                            
+                            registry.broadcast(msg.value(), session.fd(), session.getClientName());
+                            session.sendAckFor(msg->msg_id);                            
                             break;
                         }
                         case MSG_PRIVATE: {
@@ -56,12 +58,14 @@ int main() {
                                         std::min(target_nickname.size(), (size_t)MAX_NAME - 1));
 
                             registry.sendPrivate(private_msg, target_nickname, session.getClientName());
+                            session.sendAckFor(msg->msg_id);
                             break;
                         }
                         case MSG_PING: {
                             Logger::log("Application", "handle MSG_PING");
 
                             session.sendPong();
+                            session.sendAckFor(msg->msg_id);
                             break;
                         }
                         case MSG_BYE: {

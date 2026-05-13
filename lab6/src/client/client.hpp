@@ -7,7 +7,9 @@
 
 #include <iostream>
 #include <mutex>
+#include <thread>
 
+#include "thread_pool/thread_safe_queue.hpp"
 #include "messaging/messaging.hpp"
 
 class Client {
@@ -18,6 +20,8 @@ class Client {
     uint16_t _port;
 
     Messenger _messenger;
+    ThreadSafeQueue<MessageEx> _inbox;
+    std::thread _ack_reader;
 
     std::string _nickname;
     
@@ -37,6 +41,10 @@ public:
 
     void sendHello(const MessageEx& msg);
     void recvWelcome();
+
+    void startAckReader();
+    void notifyAck(uint32_t expected_msg_id);
+    
     void auth(MessageEx msg);
     MessageEx enterNickname();
 
@@ -50,4 +58,7 @@ public:
     std::string getFormattedIpPort() const;
     std::string getNickname() const;
 
+private:
+    void rawSend(const MessageEx& msg);
+    std::optional<MessageEx> rawRecv();
 };

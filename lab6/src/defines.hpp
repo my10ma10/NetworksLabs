@@ -8,6 +8,9 @@ inline constexpr size_t MAX_NAME = 32;
 inline constexpr int MAX_PAYLOAD = 256;
 inline constexpr size_t MAX_TIME_STR = 32;
 inline constexpr size_t THREAD_COUNT = 10;
+inline constexpr int MAX_ACK_RETRIES = 3;
+inline constexpr int ACK_TIMEOUT_MS = 2000;
+
 inline size_t Id_Count = 0;
 
 struct MessageEx {
@@ -37,7 +40,9 @@ enum MessageType : uint8_t {
 	MSG_LIST         = 11,  // список пользователей
     MSG_HISTORY      = 12,  // запрос истории
     MSG_HISTORY_DATA = 13,  // ответ с историей
-    MSG_HELP         = 14   // справочная информация
+    MSG_HELP         = 14,  // справочная информация
+
+    MSG_ACK          = 15
 };
 
 struct OfflineMsg {  

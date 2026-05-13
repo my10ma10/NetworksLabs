@@ -12,6 +12,13 @@ add_library(time_lib STATIC
 target_include_directories(time_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 
+add_library(thread_pool_lib STATIC
+    thread_pool/thread_pool.hpp
+    thread_pool/thread_pool.cpp
+)
+target_include_directories(thread_pool_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+
 add_library(messenger_lib STATIC
     messaging/messaging.hpp
     messaging/messaging.cpp

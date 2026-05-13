@@ -1,6 +1,6 @@
 #include "thread_pool.hpp"
 
-#include "../../defines.hpp"
+#include "defines.hpp"
 
 ThreadPool::ThreadPool() {
     size_t size = THREAD_COUNT;

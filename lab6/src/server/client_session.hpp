@@ -8,9 +8,12 @@
 #include <optional>
 #include <vector>
 #include <mutex>
+#include <condition_variable>
+#include <thread>
 
 #include "../defines.hpp"
 #include "messaging/messaging.hpp"
+#include "thread_pool/thread_safe_queue.hpp"
 
 class ClientSession {
     int _conn_fd = -1;
@@ -18,6 +21,9 @@ class ClientSession {
 
     Messenger _messenger;
     std::mutex _mtx;
+    
+    std::thread _ack_reader;
+    ThreadSafeQueue<MessageEx> _inbox;
 
     std::string nickname;
 
@@ -35,6 +41,9 @@ public:
     void sendWelcome(uint16_t port);
     void auth();
 
+    void startAckReader();
+    void sendAckFor(uint32_t msg_id);
+
     void sendPong();
 
     void send(const MessageEx& msg, int fd = -1);
@@ -45,4 +54,7 @@ public:
 
     std::string getClientName() const { return nickname; }
     int fd() const { return _conn_fd; }
+
+    void rawSend(const MessageEx& msg, int fd = -1);
+    std::optional<MessageEx> rawRecv();
 };

@@ -10,7 +10,7 @@ void SessionRegistry::appendHistory(const MessageEx& msg, bool delivered, bool i
         std::cerr << "Cannot open history file\n";
         return;
     }
-\
+
     static const std::unordered_map<int, std::string> type_names = {
         {MSG_TEXT,    "MSG_TEXT"},
         {MSG_PRIVATE, "MSG_PRIVATE"},
@@ -93,7 +93,7 @@ void SessionRegistry::broadcast(const MessageEx& msg, int sender_fd, const std::
     for (auto& [fd, session] : _sessions) {
         if (fd == sender_fd) continue;
         try {
-            session->send(broadcast_msg);
+            session->rawSend(broadcast_msg);
         } 
         catch (const std::exception& ex) {
             std::cerr << "Broadcast to fd=" << fd << " failed: " << ex.what() << "\n";

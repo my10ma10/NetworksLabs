@@ -25,31 +25,63 @@ void Client::connect() {
 }
 
 void Client::sendHello(const MessageEx& msg) {
-    Client::send(msg);
+    Client::rawSend(msg);
+    Logger::log("Transport", "send() msg_id=" + std::to_string(msg.msg_id));
 }
 
 void Client::recvWelcome() {
-    auto welcome_msg = Client::recv();
+    auto welcome_msg = Client::rawRecv();
 
     if (!welcome_msg.has_value()) {
         throw std::runtime_error("Nullopt welcome msg");
+    }
+    if (welcome_msg->type != MSG_WELCOME) {
+        throw std::runtime_error("Unexpected msg type: " 
+            + std::to_string(welcome_msg->type) 
+            + " (instead of MSG_WELCOME)");
     }
 
     std::cout << msgToString(welcome_msg.value()) << std::endl;
 }
 
+void Client::startAckReader() {
+    _ack_reader = std::thread([this]() {
+        while (_socket_fd != -1) {
+            auto msg = Client::rawRecv();
+            if (!msg.has_value()) break;
+
+            if (msg->type == MSG_ACK) {
+                Logger::log("Application", 
+                    std::string("client ack_reader got ACK for msg_id=") 
+                    + std::to_string(msg->msg_id)
+                );
+                _messenger.notifyACK(msg->msg_id);
+            } 
+            else {
+                _inbox.enqueue(msg.value());
+            }
+        }
+    });
+}
+
+void Client::notifyAck(uint32_t expected_msg_id) {
+    _messenger.notifyACK(expected_msg_id);
+}
+
 void Client::auth(MessageEx msg) {
     msg.type = MSG_AUTH;
 
-    Client::send(msg);
+    Client::rawSend(msg);
 
-    auto auth_msg = Client::recv();
+    auto auth_msg = Client::rawRecv();
 
     if (!auth_msg.has_value()) {
         throw std::runtime_error("Nullopt auth msg");
     }
     if (auth_msg->type != MSG_AUTH) {
-        throw std::runtime_error("Unexpected msg type: " + std::to_string(auth_msg->type));
+        throw std::runtime_error("Unexpected msg type: " 
+            + std::to_string(auth_msg->type) 
+            + " (instead of MSG_AUTH)");
     }
     if (auth_msg->type == MSG_ERROR) {
         throw std::runtime_error("Auth error: " +  msgToString(auth_msg.value()));
@@ -83,7 +115,7 @@ void Client::send(const MessageEx& msg) {
 }
 
 std::optional<MessageEx> Client::recv() {
-    return _messenger.recvMsg(_socket_fd);
+    return _inbox.pop();
 }
 
 std::string Client::getFormattedIpPort() const {
@@ -98,6 +130,30 @@ std::string Client::getNickname() const {
     return _nickname;
 }
 
+void Client::rawSend(const MessageEx& msg) {
+    json j = msg;
+    std::string j_str = j.dump() + "\n";
+
+    _messenger.rawSend(_socket_fd, j_str);
+}
+
+std::optional<MessageEx> Client::rawRecv() {
+    std::string recv_str;
+    ssize_t received = _messenger.rawRecv(_socket_fd, recv_str);
+
+    if (received <= 0) return std::nullopt; 
+    if (recv_str.empty()) return std::nullopt;
+
+    MessageEx msg = json::parse(recv_str);
+
+    return msg;
+}
+
 void Client::reset() {
+    _inbox.stop();
+    if (_ack_reader.joinable()) {
+        _ack_reader.join();
+    }
+
     Client::close();
 }

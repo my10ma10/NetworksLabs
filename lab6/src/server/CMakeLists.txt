@@ -16,11 +16,6 @@ target_link_libraries(session_registry_lib PUBLIC
     logger_lib
 )
 
-add_library(thread_pool_lib STATIC
-    thread_pool/thread_pool.hpp
-    thread_pool/thread_pool.cpp
-)
-
 add_library(server_lib STATIC
     server.cpp
     server.hpp

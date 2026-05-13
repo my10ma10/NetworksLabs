@@ -47,7 +47,7 @@ int main() {
                         printOfflineMessage(msg.value());
                     } 
                     else {
-                        printPrivateMessage(msg.value());
+                        printTextMessage(msg.value());
                     }
                     break;
                 }
@@ -73,7 +73,7 @@ int main() {
                     break;
 
                 case MSG_HISTORY_DATA:
-                    std::cout << "\r" << "[HISTORY:]\n" << msgToString(msg.value()) << "\n> " << std::flush;
+                    std::cout << "\r" << "[HISTORY:]\n\r" << msgToString(msg.value()) << "\n> " << std::flush;
                     break;
                 default:
                     std::cerr << "\rUnexpected msg type: " 
@@ -99,6 +99,7 @@ int main() {
                 }
                 else if (input_str == "/ping") {
                     auto msg = stringToMsg("PING", MSG_PING);
+                    
                     client.send(msg);
                 }
                 else if (input_str == "/quit") {
@@ -181,6 +182,8 @@ void connectWithRetry(Client& client) {
             client.recvWelcome();
 
             client.auth(nickname_msg);
+
+            client.startAckReader();
             return;
         }
         catch (const std::exception& ex) {
