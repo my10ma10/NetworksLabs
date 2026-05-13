@@ -9,6 +9,8 @@
 
 #include "../time_formatting.cpp"
 
+namespace ch = std::chrono;
+
 std::atomic<bool> is_reconnecting{false};
 std::mutex reconnect_mtx;
 std::condition_variable reconnect_cv;
@@ -32,7 +34,7 @@ int main() {
                 if (!is_reconnecting.exchange(true)) {
                     std::cerr << "Connection lost, reconnecting\n";
 
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    std::this_thread::sleep_for(ch::seconds(2));
                     connectWithRetry(client);
                     
                     is_reconnecting = false;
@@ -114,22 +116,22 @@ int main() {
 
 
                     for (int i = 0; i < n; ++i) {
-                        MessageEx ping = stringToMsg("PING", MSG_PING);
-                        PingStats s;
-                        s.msg_id   = ping.msg_id;
-                        s.sent_at  = std::chrono::steady_clock::now();
-                        stats.push_back(s);
-
+                         MessageEx ping = stringToMsg("PING", MSG_PING);
                         client.registerPing(ping.msg_id);
-                        client.send(ping);
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        stats.push_back(
+                            {ping.msg_id, ch::steady_clock::now(), std::nullopt}
+                        );
+                        
+                        client.rawSend(ping);
+                        std::this_thread::sleep_for(ch::milliseconds(100));
                     }
 
-                    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+                    auto deadline = ch::steady_clock::now() + ch::seconds(3);
 
-                    while (std::chrono::steady_clock::now() < deadline) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    while (ch::steady_clock::now() < deadline) {
+                        std::this_thread::sleep_for(ch::milliseconds(50));
                     }
+                    client.printPingResults(stats);
                 }
                 else if (input_str == "/netdiag") {
                     if (!stats.empty()) {
@@ -198,7 +200,7 @@ int main() {
     }
     catch (const std::exception&) {
         std::cerr << "Send failed, waiting for reconnect\n";
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(ch::seconds(2));
     }
 
 
@@ -225,7 +227,7 @@ void connectWithRetry(Client& client) {
         }
         catch (const std::exception& ex) {
             std::cerr << "Reconnecting in 2 seconds (" << ex.what() << ")\n";
-            std::this_thread::sleep_for(std::chrono::seconds(2));
+            std::this_thread::sleep_for(ch::seconds(2));
             client.reset();
         }
     }

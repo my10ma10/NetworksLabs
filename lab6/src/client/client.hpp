@@ -71,7 +71,6 @@ public:
     std::string getFormattedIpPort() const;
     std::string getNickname() const;
 
-private:
     void rawSend(const MessageEx& msg);
     std::optional<MessageEx> rawRecv();
 };

@@ -2,8 +2,14 @@
 
 #include "thread_pool/thread_pool.hpp"
 #include "session_registry.hpp"
+#include "net_emulator/net_emulator.hpp"
 
-int main() {
+NetConfig parseArgs(int argc, char* argv[]);
+
+int main(int argc, char* argv[]) {
+    NetConfig config = parseArgs(argc, argv);
+    NetEmulator emulator(config);
+
     Server server("127.0.0.1", 8080);
     server.bind();
     server.listen(10);
@@ -15,7 +21,7 @@ int main() {
         ClientSession session = server.accept();
 
 
-        pool.enqueueConnection([session = std::move(session), &server, &registry]() mutable {
+        pool.enqueueConnection([session = std::move(session), &server, &registry, &emulator]() mutable {
             registry.add(session);
 
             try {
@@ -34,6 +40,11 @@ int main() {
                         std::cerr << "User [" << session.getClientName() \
                                     <<  "] disconnected" << std::endl;
                         break;
+                    }
+
+                    MessageEx processed = msg.value();
+                    if (!emulator.apply(processed)) {
+                        continue;
                     }
 
                     switch (msg->type) {
@@ -127,4 +138,19 @@ int main() {
         });
     }
     return 0;
+}
+
+
+NetConfig parseArgs(int argc, char* argv[]) {
+    NetConfig config;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg.substr(0, 8) == "--delay=")
+            config.delay_ms = std::stoi(arg.substr(8));
+        else if (arg.substr(0, 7) == "--drop=")
+            config.drop = std::stof(arg.substr(7));
+        else if (arg.substr(0, 10) == "--corrupt=")
+            config.corrupt = std::stof(arg.substr(10));
+    }
+    return config;
 }

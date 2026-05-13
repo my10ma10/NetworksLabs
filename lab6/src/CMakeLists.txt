@@ -18,6 +18,11 @@ add_library(thread_pool_lib STATIC
 )
 target_include_directories(thread_pool_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
+add_library(net_emulator_lib STATIC
+    net_emulator/net_emulator.hpp
+    net_emulator/net_emulator.cpp
+)
+target_include_directories(net_emulator_lib PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 add_library(messenger_lib STATIC
     messaging/messaging.hpp

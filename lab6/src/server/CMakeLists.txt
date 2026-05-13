@@ -34,4 +34,5 @@ target_link_libraries(server PUBLIC
     client_session_lib
     session_registry_lib
     logger_lib
+    net_emulator_lib
 )
