@@ -44,7 +44,7 @@ public:
     void startAckReader();
     void sendAckFor(uint32_t msg_id);
 
-    void sendPong();
+    void sendPong(const MessageEx& pong);
 
     void send(const MessageEx& msg, int fd = -1);
     std::optional<MessageEx> recv();

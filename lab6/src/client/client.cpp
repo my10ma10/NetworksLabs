@@ -1,6 +1,7 @@
 #include "client.hpp"
 
 #include <cstring>
+#include <fstream>
 
 Client::Client(const std::string &ip_addr, uint16_t port) :
     _ip_addr(ip_addr), _port(port)
@@ -68,6 +69,22 @@ void Client::notifyAck(uint32_t expected_msg_id) {
     _messenger.notifyACK(expected_msg_id);
 }
 
+void Client::registerPing(uint32_t msg_id) {
+    std::scoped_lock lock(_ping_mtx);
+    _ping_sent[msg_id] = std::chrono::steady_clock::now();
+}
+
+void Client::registerPong(uint32_t msg_id) {
+    std::scoped_lock lock(_ping_mtx);
+    auto it = _ping_sent.find(msg_id);
+    if (it == _ping_sent.end()) return;
+
+    auto now = std::chrono::steady_clock::now();
+    double rtt = std::chrono::duration<double, std::milli>(now - it->second).count();
+    _ping_rtt[msg_id] = rtt;
+}
+
+
 void Client::auth(MessageEx msg) {
     msg.type = MSG_AUTH;
 
@@ -116,6 +133,71 @@ void Client::send(const MessageEx& msg) {
 
 std::optional<MessageEx> Client::recv() {
     return _inbox.pop();
+}
+
+void Client::printPingResults(std::vector<PingStats>& stats) {
+    int sent     = stats.size();
+    int received = 0;
+    double rtt_sum    = 0;
+    double jitter_sum = 0;
+    double prev_rtt   = -1;
+
+    for (auto& s : stats) {
+        auto rtt = getRtt(s.msg_id);
+        if (rtt.has_value()) {
+            ++received;
+            rtt_sum += rtt.value();
+            if (prev_rtt >= 0) {
+                jitter_sum += std::abs(rtt.value() - prev_rtt);
+            }
+            prev_rtt = rtt.value();
+            s.rtt_ms = rtt.value();
+        }
+    }
+
+    double rtt_avg    = received > 0 ? rtt_sum / received : 0;
+    double jitter_avg = received > 1 ? jitter_sum / (received - 1) : 0;
+    double loss       = (sent - received) * 100.0 / sent;
+
+    std::cout << "\nRTT avg : " << rtt_avg    << " ms\n"
+              << "Jitter  : " << jitter_avg << " ms\n"
+              << "Loss    : " << loss        << " %\n\n";
+
+    saveNetDiag(rtt_avg, jitter_avg, loss, stats);
+}
+
+void Client::saveNetDiag(double rtt_avg, double jitter_avg, double loss,
+                          const std::vector<PingStats>& stats) {
+    std::string filename = "net_diag_" + _nickname + ".json";
+    std::ofstream file(filename);
+    if (!file.is_open()) return;
+
+    json j;
+    j["nickname"]    = _nickname;
+    j["rtt_avg_ms"]  = rtt_avg;
+    j["jitter_ms"]   = jitter_avg;
+    j["loss_pct"]    = loss;
+    j["timestamp"]   = std::time(nullptr);
+
+    json packets = json::array();
+    for (const auto& s : stats) {
+        json p;
+        p["msg_id"]  = s.msg_id;
+        p["rtt_ms"]  = s.rtt_ms.value_or(-1);
+        p["lost"]    = !s.rtt_ms.has_value();
+        packets.push_back(p);
+    }
+    j["packets"] = packets;
+
+    file << j.dump(4) << "\n";
+    std::cout << "Saved to " << filename << "\n";
+}
+
+std::optional<double> Client::getRtt(uint32_t msg_id) {
+    std::scoped_lock lock(_ping_mtx);
+    auto it = _ping_rtt.find(msg_id);
+    if (it == _ping_rtt.end()) return std::nullopt;
+    return it->second;
 }
 
 std::string Client::getFormattedIpPort() const {

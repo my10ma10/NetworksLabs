@@ -58,6 +58,7 @@ int main() {
                 }
                 case MSG_PONG:
                 {
+                    client.registerPong(msg->msg_id);
                     std::cout << "\rPONG\n> " << std::flush;
                     break;
                 }
@@ -97,10 +98,40 @@ int main() {
                             << "/quit\n/w <nick> <message>\n/ping\n"
                             << "Tip: packets never sleep\n";
                 }
-                else if (input_str == "/ping") {
-                    auto msg = stringToMsg("PING", MSG_PING);
-                    
-                    client.send(msg);
+                else if (input_str == "/ping" || input_str.substr(0, 6) == "/ping ") {
+                    int n = 10; 
+                    if (input_str.size() > 6) {
+                        try {
+                            n = std::stoi(input_str.substr(6));
+                            if (n <= 0) throw std::invalid_argument("");
+                        } 
+                        catch (...) {
+                            std::cerr << "Usage: /ping N (N > 0)\n";
+                            continue;
+                        }
+                    }
+
+                    std::vector<PingStats> stats;
+
+                    for (int i = 0; i < n; ++i) {
+                        MessageEx ping = stringToMsg("PING", MSG_PING);
+                        PingStats s;
+                        s.msg_id   = ping.msg_id;
+                        s.sent_at  = std::chrono::steady_clock::now();
+                        stats.push_back(s);
+
+                        client.registerPing(ping.msg_id);
+                        client.send(ping);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    }
+
+                    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+
+                    while (std::chrono::steady_clock::now() < deadline) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    }
+
+                    client.printPingResults(stats);
                 }
                 else if (input_str == "/quit") {
                     is_running = false;

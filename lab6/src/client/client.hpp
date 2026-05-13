@@ -12,6 +12,8 @@
 #include "thread_pool/thread_safe_queue.hpp"
 #include "messaging/messaging.hpp"
 
+struct PingStats;
+
 class Client {
     struct sockaddr_in _server_info;
     int _socket_fd = -1;
@@ -25,7 +27,9 @@ class Client {
 
     std::string _nickname;
     
-    std::mutex _mtx;
+    std::mutex _mtx, _ping_mtx;
+    std::unordered_map<uint32_t, std::chrono::steady_clock::time_point> _ping_sent;
+    std::unordered_map<uint32_t, double> _ping_rtt;
 
 public:
     Client() = default;
@@ -44,6 +48,12 @@ public:
 
     void startAckReader();
     void notifyAck(uint32_t expected_msg_id);
+
+    void registerPing(uint32_t msg_id);
+    void registerPong(uint32_t msg_id);
+
+    void saveNetDiag(double rtt_avg, double jitter_avg, double loss,
+                          const std::vector<PingStats>& stats);
     
     void auth(MessageEx msg);
     MessageEx enterNickname();
@@ -55,10 +65,19 @@ public:
     void send(const MessageEx& msg);
     std::optional<MessageEx> recv();
 
+    void printPingResults(std::vector<PingStats>& stats);
+
+    std::optional<double> getRtt(uint32_t msg_id);
     std::string getFormattedIpPort() const;
     std::string getNickname() const;
 
 private:
     void rawSend(const MessageEx& msg);
     std::optional<MessageEx> rawRecv();
+};
+
+struct PingStats {
+    uint32_t msg_id;
+    std::chrono::steady_clock::time_point sent_at;
+    std::optional<double> rtt_ms;
 };

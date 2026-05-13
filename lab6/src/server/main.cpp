@@ -64,7 +64,10 @@ int main() {
                         case MSG_PING: {
                             Logger::log("Application", "handle MSG_PING");
 
-                            session.sendPong();
+                            MessageEx pong = stringToMsg("PONG", MSG_PONG);
+                            pong.msg_id = msg->msg_id;
+
+                            session.sendPong(pong);
                             session.sendAckFor(msg->msg_id);
                             break;
                         }

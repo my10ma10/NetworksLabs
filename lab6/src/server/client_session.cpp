@@ -66,9 +66,8 @@ void ClientSession::sendWelcome(uint16_t port) {
     ClientSession::rawSend(msg);
 }
 
-void ClientSession::sendPong() {
-    MessageEx msg = stringToMsg("PONG", MSG_PONG);
-    ClientSession::send(msg);
+void ClientSession::sendPong(const MessageEx& pong) {
+    ClientSession::rawSend(pong);
 }
 
 void ClientSession::send(const MessageEx& msg, int fd) {
