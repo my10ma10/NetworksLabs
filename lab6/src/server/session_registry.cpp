@@ -130,7 +130,7 @@ void SessionRegistry::sendPrivate(const MessageEx& msg,
     std::memcpy(forward_msg.sender, sender_name.data(),
                 std::min(sender_name.size(), (size_t)MAX_NAME - 1));
 
-    it_session->second->send(forward_msg);
+    it_session->second->rawSend(forward_msg);
     appendHistory(forward_msg, true, false);
 }
 

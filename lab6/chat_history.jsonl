@@ -35,3 +35,4 @@
 {"delivered":true,"is_offline":false,"msg_id":2,"receiver":"","sender":"alex","text":"hello","timestamp":1778664202,"type":"MSG_TEXT"}
 {"delivered":true,"is_offline":false,"msg_id":3,"receiver":"","sender":"alex","text":"hello","timestamp":1778664208,"type":"MSG_TEXT"}
 {"delivered":true,"is_offline":false,"msg_id":2,"receiver":"","sender":"nick","text":"koko","timestamp":1778664211,"type":"MSG_TEXT"}
+{"delivered":true,"is_offline":false,"msg_id":5,"receiver":"alex","sender":"nick","text":"hell","timestamp":1778664710,"type":"MSG_PRIVATE"}
